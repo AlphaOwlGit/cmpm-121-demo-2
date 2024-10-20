@@ -17,6 +17,7 @@ let isDrawing = false;
 let strokes: Drawable[] = [];
 let currentStroke: Stroke | null = null;
 let redoStack: Drawable[] = [];
+let currentLineWidth = 1;
 
 interface Drawable {
     display(ctx: CanvasRenderingContext2D): void;
@@ -24,9 +25,11 @@ interface Drawable {
 
 class Stroke implements Drawable {
     private points: { x: number; y: number; }[] = [];
-    
-    constructor( initialX: number, initialY: number) {
+    private lineWidth: number;
+
+    constructor( initialX: number, initialY: number, lineWidth: number) {
         this.points = [{ x: initialX, y: initialY }];
+        this.lineWidth = lineWidth;
     }
 
     addPoint(x: number, y: number ) {
@@ -34,10 +37,10 @@ class Stroke implements Drawable {
     }
 
     display(ctx: CanvasRenderingContext2D): void {
-      if (this.points.length > 0) {
+      ctx.lineWidth = this.lineWidth;
+        if (this.points.length > 0) {
         ctx.beginPath();
         ctx.moveTo(this.points[0].x, this.points[0].y);
-
         this.points.forEach(points => {
             ctx.lineTo(points.x, points.y);
         });
@@ -61,13 +64,18 @@ function redrawCanvas(ctx: CanvasRenderingContext2D) {
     });
 }
 
+function failDraw() {
+    isDrawing = false;
+    currentStroke = null;
+  }
+
 if (ctx) {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, 256, 256);
 
     canvas.addEventListener('mousedown', (event) => {
         isDrawing = true;
-        currentStroke = new Stroke(event.offsetX, event.offsetY);
+        currentStroke = new Stroke(event.offsetX, event.offsetY, currentLineWidth);
         strokes.push(currentStroke);
         redoStack = [];
         dispatchDrawingChangedEvent();
@@ -82,21 +90,20 @@ if (ctx) {
 
     canvas.addEventListener("mouseup", () => {
         if (isDrawing) {
-            isDrawing = false;
-            currentStroke = null;
+            failDraw();
         }
     });
 
     canvas.addEventListener("mouseleave", () => {
-        isDrawing = false;
-        currentStroke = null;
+        failDraw();
     });
 
     canvas.addEventListener('drawing-changed', () => {
         redrawCanvas(ctx);
     });
+}
 
-    const clear = document.createElement("button");
+const clear = document.createElement("button");
     clear.innerHTML = "Clear Drawing";
     clear.addEventListener("click", () => {
         strokes = [];
@@ -130,4 +137,30 @@ if (ctx) {
         }
     });
     app.appendChild(redo);
+
+function setToolButtonSelected(button: HTMLButtonElement) {
+    document.querySelectorAll('.tool-button').forEach(btn => {
+        btn.classList.remove('selectedTool');
+    });
+    button.classList.add('selectedTool');
 }
+
+const thin = document.createElement("button");
+    thin.innerHTML = "Thin";
+    thin.classList.add("tool-button");
+    thin.addEventListener("click", () => {
+        currentLineWidth = 1;
+        setToolButtonSelected(thin);
+    });
+    app.appendChild(thin);
+
+    const thick = document.createElement("button");
+    thick.innerHTML = "Thick";
+    thick.classList.add("tool-button");
+    thick.addEventListener("click", () => {
+        currentLineWidth = 5;
+        setToolButtonSelected(thick);
+    });
+    app.appendChild(thick);
+
+    setToolButtonSelected(thin);
