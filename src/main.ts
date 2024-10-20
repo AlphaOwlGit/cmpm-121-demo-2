@@ -10,19 +10,40 @@ header.innerHTML = APP_NAME;
 app.append(header);
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-
-let isDrawing = false;
-let strokes: { x: number; y: number; } [][] = [];
-let currentStroke: {x: number; y: number; }[] = [];
-let redoStack: { x: number; y: number; }[][] = [];
-
 const ctx = canvas.getContext("2d");
 app.append(canvas);
 
-function addPointToStroke(event: MouseEvent) {
-    const point = {x: event.offsetX, y: event.offsetY };
-    currentStroke.push(point);
-    dispatchDrawingChangedEvent();
+let isDrawing = false;
+let strokes: Drawable[] = [];
+let currentStroke: Stroke | null = null;
+let redoStack: Drawable[] = [];
+
+interface Drawable {
+    display(ctx: CanvasRenderingContext2D): void;
+}
+
+class Stroke implements Drawable {
+    private points: { x: number; y: number; }[] = [];
+    
+    constructor( initialX: number, initialY: number) {
+        this.points = [{ x: initialX, y: initialY }];
+    }
+
+    addPoint(x: number, y: number ) {
+        this.points.push({ x , y });
+    }
+
+    display(ctx: CanvasRenderingContext2D): void {
+      if (this.points.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+
+        this.points.forEach(points => {
+            ctx.lineTo(points.x, points.y);
+        });
+        ctx.stroke();
+      }
+    }
 }
 
 function dispatchDrawingChangedEvent() {
@@ -32,19 +53,12 @@ function dispatchDrawingChangedEvent() {
 
 function redrawCanvas(ctx: CanvasRenderingContext2D) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    ctx.beginPath();
     strokes.forEach(stroke => {
-        if (stroke.length > 0) {
-            ctx.moveTo(stroke[0].x, stroke[0].y);
-
-            stroke.forEach(point => {
-                ctx.lineTo(point.x, point.y);
-            });
-        }
+        stroke.display(ctx);
     });
-    ctx.stroke();
 }
 
 if (ctx) {
@@ -53,26 +67,29 @@ if (ctx) {
 
     canvas.addEventListener('mousedown', (event) => {
         isDrawing = true;
-        currentStroke = [];
+        currentStroke = new Stroke(event.offsetX, event.offsetY);
         strokes.push(currentStroke);
         redoStack = [];
-        addPointToStroke(event);
+        dispatchDrawingChangedEvent();
     });
 
     canvas.addEventListener("mousemove", (event) => {
-        if (isDrawing) {
-            addPointToStroke(event);
+        if (isDrawing && currentStroke) {
+            currentStroke.addPoint(event.offsetX, event.offsetY);
+            dispatchDrawingChangedEvent();
         }
     });
 
     canvas.addEventListener("mouseup", () => {
         if (isDrawing) {
             isDrawing = false;
+            currentStroke = null;
         }
     });
 
     canvas.addEventListener("mouseleave", () => {
         isDrawing = false;
+        currentStroke = null;
     });
 
     canvas.addEventListener('drawing-changed', () => {
