@@ -39,7 +39,6 @@ canvas {
   border: 1px solid black;
   border-radius: 4px;
   filter: drop-shadow(black 1rem 1rem 10px);
-  cursor: crosshair;
   stroke: solid black;
 }
 

@@ -18,6 +18,7 @@ let strokes: Drawable[] = [];
 let currentStroke: Stroke | null = null;
 let redoStack: Drawable[] = [];
 let currentLineWidth = 1;
+let toolPreview: ToolPreview | null = null;
 
 interface Drawable {
     display(ctx: CanvasRenderingContext2D): void;
@@ -46,6 +47,36 @@ class Stroke implements Drawable {
         });
         ctx.stroke();
       }
+    }
+}
+
+class ToolPreview implements Drawable {
+    private x: number;
+    private y: number;
+    private radius: number;
+
+    constructor(radius: number) {
+        this.x = 0;
+        this.y = 0;
+        this.radius = radius;
+    }
+
+    move(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
+
+function updateToolPreview() {
+    toolPreview = new ToolPreview(currentLineWidth / 2);
+    if (!isDrawing && ctx && toolPreview) {
+        toolPreview.draw(ctx);
     }
 }
 
@@ -88,6 +119,13 @@ if (ctx) {
         }
     });
 
+    canvas.addEventListener("mousemove", (event) => {
+        if (!isDrawing && toolPreview) {
+            toolPreview.move(event.offsetX, event.offsetY);
+            canvas.dispatchEvent(new CustomEvent('tool-moved'));
+        }
+    });
+
     canvas.addEventListener("mouseup", () => {
         if (isDrawing) {
             failDraw();
@@ -101,48 +139,57 @@ if (ctx) {
     canvas.addEventListener('drawing-changed', () => {
         redrawCanvas(ctx);
     });
+
+    canvas.addEventListener('tool-moved', () => {
+        if (ctx && toolPreview && !isDrawing) {
+            redrawCanvas(ctx);
+            toolPreview.draw(ctx);
+        }
+    });
 }
 
 const clear = document.createElement("button");
-    clear.innerHTML = "Clear Drawing";
-    clear.addEventListener("click", () => {
-        strokes = [];
-        redoStack = [];
-        dispatchDrawingChangedEvent();
-    });
-    app.append(clear);
+clear.innerHTML = "Clear Drawing";
+clear.addEventListener("click", () => {
+    strokes = [];
+    redoStack = [];
+    dispatchDrawingChangedEvent();
+});
+app.append(clear);
 
-    const undo = document.createElement("button");
-    undo.innerHTML = "Undo";
-    undo.addEventListener("click", () => {
-        if (strokes.length > 0) {
-            const lastStroke = strokes.pop();
-            if (lastStroke) {
-                redoStack.push(lastStroke);
-                dispatchDrawingChangedEvent();
-            }
+const undo = document.createElement("button");
+undo.innerHTML = "Undo";
+undo.addEventListener("click", () => {
+    if (strokes.length > 0) {
+        const lastStroke = strokes.pop();
+        if (lastStroke) {
+            redoStack.push(lastStroke);
+            dispatchDrawingChangedEvent();
         }
-    });
-    app.append(undo);
+    }
+});
+app.append(undo);
 
-    const redo = document.createElement("button");
-    redo.innerHTML = "Redo";
-    redo.addEventListener("click", () => {
-        if (redoStack.length > 0) {
-            const stroke = redoStack.pop();
-            if (stroke) {
-                strokes.push(stroke);
-                dispatchDrawingChangedEvent();
-            }
+const redo = document.createElement("button");
+redo.innerHTML = "Redo";
+redo.addEventListener("click", () => {
+    if (redoStack.length > 0) {
+        const stroke = redoStack.pop();
+        if (stroke) {
+            strokes.push(stroke);
+            dispatchDrawingChangedEvent();
         }
-    });
-    app.appendChild(redo);
+    }
+});
+app.appendChild(redo);
 
 function setToolButtonSelected(button: HTMLButtonElement) {
     document.querySelectorAll('.tool-button').forEach(btn => {
         btn.classList.remove('selectedTool');
     });
     button.classList.add('selectedTool');
+
+    updateToolPreview();
 }
 
 const thin = document.createElement("button");
