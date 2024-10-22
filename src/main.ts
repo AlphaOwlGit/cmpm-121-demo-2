@@ -18,7 +18,7 @@ let isDrawing = false;
 let currentLineWidth = 1;
 let strokes: Stroke[] = [];
 let redoStack: Stroke[] = [];
-const stickers: Sticker[] = [];
+let stickers: Sticker[] = [];
 let currentStroke: Stroke | null = null;
 let toolPreview: ToolPreview | null = null;
 let currentSticker: Sticker | null = null;
@@ -252,6 +252,7 @@ clear.innerHTML = "Clear Drawing";
 clear.addEventListener("click", () => {
     strokes = [];
     redoStack = [];
+    stickers = [];
     dispatchDrawingChangedEvent();
 });
 buttonContainer.append(clear);
@@ -340,6 +341,41 @@ createNewSticker.addEventListener("click", () => {
     canvas.dispatchEvent(new CustomEvent('tool-moved'));
 });
 buttonContainer.appendChild(createNewSticker);
+
+function saveImage() {
+    const tempCanvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const exportSize = 1024;
+    tempCanvas.width = exportSize;
+    tempCanvas.height = exportSize;
+    const tempctx = tempCanvas.getContext("2d");
+    const scaleSize = 4;
+    if (tempctx) {
+      tempctx.scale(scaleSize, scaleSize);
+      tempctx.fillStyle = "white";
+      tempctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      strokes.forEach(stroke => stroke.draw(tempctx));
+      stickers.forEach(sticker => sticker.draw(tempctx));
+    }
+    const anchor = document.createElement("a");
+    anchor.href = tempCanvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.appendChild(anchor);
+  
+    canvas.width = exportSize / scaleSize;
+    canvas.height = exportSize / scaleSize;
+  
+    tempCanvas.remove();
+    app.append(canvas);
+}
+
+const exportPic = document.createElement("button");
+exportPic.innerHTML = "Export to PNG";
+exportPic.addEventListener("click", () => {
+    saveImage();
+});
+buttonContainer.appendChild(exportPic);
 
 initStickerButtons();
 setToolButtonSelected(thin);
