@@ -23,6 +23,12 @@ let currentStroke: Stroke | null = null;
 let toolPreview: ToolPreview | null = null;
 let currentSticker: Sticker | null = null;
 
+const stickerData = [
+    {symbol: "❤️"},
+    {symbol: "🔥"},
+    {symbol: "💀"},
+];
+
 interface Stroke {
     points: {x: number; y: number; }[];
     lineWidth: number;
@@ -152,16 +158,6 @@ function redrawCanvas(ctx: CanvasRenderingContext2D) {
 function failDraw() {
     isDrawing = false;
     currentStroke = null;
-}
-
-function createStickerButton(symbol: string) {
-    const button = document.createElement("button");
-    button.innerHTML = symbol;
-    button.addEventListener("click", () => {
-        currentSticker = createSticker(symbol);
-        canvas.dispatchEvent(new CustomEvent('tool-moved'));
-    });
-    buttonContainer.appendChild(button);
 }
 
 if (ctx) {
@@ -314,8 +310,36 @@ thick.addEventListener("click", () => {
 });
 buttonContainer.appendChild(thick);
 
-createStickerButton("❤️");
-createStickerButton("🔥");
-createStickerButton("💀");
+function createStickerButton(symbol: string) {
+    const button = document.createElement("button");
+    button.innerHTML = symbol;
+    button.addEventListener("click", () => {
+        currentSticker = createSticker(symbol);
+        canvas.dispatchEvent(new CustomEvent('tool-moved'));
+    });
+    buttonContainer.appendChild(button);
+}
 
+function initStickerButtons() {
+    stickerData.forEach(sticker => {
+        createStickerButton(sticker.symbol);
+    });
+}
+
+const createNewSticker = document.createElement("button");
+createNewSticker.innerHTML = "Add New Sticker";
+createNewSticker.addEventListener("click", () => {
+    const symbol = prompt("Enter the symbol for your new sticker:", "");
+    if (symbol) {
+        const newSticker = {
+            symbol: "Custom"
+        };
+        stickerData.push(newSticker);
+        createStickerButton(symbol);
+    }
+    canvas.dispatchEvent(new CustomEvent('tool-moved'));
+});
+buttonContainer.appendChild(createNewSticker);
+
+initStickerButtons();
 setToolButtonSelected(thin);
