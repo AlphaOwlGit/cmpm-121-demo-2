@@ -97,13 +97,21 @@ button:focus-visible {
 }
 .tool-button {
   margin: 5px;
-  padding: 5px;
-  border: 1px solid #ccc;
+  padding: 0.6em 1.2em;
+  border: 1px solid white;
+  background-color: black;
   cursor: pointer;
 }
 button.selectedTool {
   border: 2px solid red;
   background-color: grey;
+}
+.emoji-button {
+  margin: 5px;
+  padding: 5px;
+  border: solid darkgreen;
+  background-color: green;
+  cursor: pointer;
 }
 
 @media (prefers-color-scheme: light) {

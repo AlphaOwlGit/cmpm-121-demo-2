@@ -1,6 +1,6 @@
 import "./style.css";
 
-const APP_NAME = "Sticker Sketchpad";
+const APP_NAME = "Santa's Spooky Sketchpad for Halloween 2024!!!";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 const buttonContainer = document.querySelector<HTMLDivElement>("#button-container")!;
 
@@ -22,11 +22,14 @@ let stickers: Sticker[] = [];
 let currentStroke: Stroke | null = null;
 let toolPreview: ToolPreview | null = null;
 let currentSticker: Sticker | null = null;
+let firstPenCheck = false;
 
 const stickerData = [
-    {symbol: "❤️"},
-    {symbol: "🔥"},
+    {symbol: "👻"},
+    {symbol: "🎃"},
     {symbol: "💀"},
+    {symbol: "🧟"},
+    {symbol: "🧛"},
 ];
 
 interface Stroke {
@@ -115,7 +118,7 @@ function createSticker(symbol: string, initialX: number = 0, initialY: number = 
             }
         },
         draw(ctx: CanvasRenderingContext2D) {
-            ctx.font = "24px sans-serif";
+            ctx.font = "20px sans-serif";
             ctx.fillText(this.symbol, this.x, this.y);
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -293,54 +296,24 @@ function setToolButtonSelected(button: HTMLButtonElement) {
     currentSticker = null;
 }
 
-const thin = document.createElement("button");
-thin.innerHTML = "Thin";
-thin.classList.add("tool-button");
-thin.addEventListener("click", () => {
-    currentLineWidth = 1;
-    setToolButtonSelected(thin);
-});
-buttonContainer.appendChild(thin);
-
-const thick = document.createElement("button");
-thick.innerHTML = "Thick";
-thick.classList.add("tool-button");
-thick.addEventListener("click", () => {
-    currentLineWidth = 5;
-    setToolButtonSelected(thick);
-});
-buttonContainer.appendChild(thick);
-
-function createStickerButton(symbol: string) {
-    const button = document.createElement("button");
-    button.innerHTML = symbol;
-    button.addEventListener("click", () => {
-        currentSticker = createSticker(symbol);
-        canvas.dispatchEvent(new CustomEvent('tool-moved'));
-    });
-    buttonContainer.appendChild(button);
-}
-
-function initStickerButtons() {
-    stickerData.forEach(sticker => {
-        createStickerButton(sticker.symbol);
-    });
-}
-
-const createNewSticker = document.createElement("button");
-createNewSticker.innerHTML = "Add New Sticker";
-createNewSticker.addEventListener("click", () => {
-    const symbol = prompt("Enter the symbol for your new sticker:", "");
-    if (symbol) {
-        const newSticker = {
-            symbol: "Custom"
-        };
-        stickerData.push(newSticker);
-        createStickerButton(symbol);
+function createSizeButton(size: number, name: string) {
+    const pen = document.createElement("button");
+    pen.innerHTML = name;
+    pen.classList.add("tool-button");
+    if (!firstPenCheck) {
+        setToolButtonSelected(pen);
+        firstPenCheck = true;
     }
-    canvas.dispatchEvent(new CustomEvent('tool-moved'));
-});
-buttonContainer.appendChild(createNewSticker);
+    pen.addEventListener("click", () => {
+        currentLineWidth = size;
+        setToolButtonSelected(pen);
+    });
+    buttonContainer.appendChild(pen);
+}
+
+createSizeButton(1, "1 pt");
+createSizeButton(3, "3 pt");
+createSizeButton(5, "5 pt");
 
 function saveImage() {
     const tempCanvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -377,5 +350,37 @@ exportPic.addEventListener("click", () => {
 });
 buttonContainer.appendChild(exportPic);
 
+function createStickerButton(symbol: string) {
+    const button = document.createElement("button");
+    button.innerHTML = symbol;
+    button.classList.add("emoji-button");
+    button.addEventListener("click", () => {
+        currentSticker = createSticker(symbol);
+        canvas.dispatchEvent(new CustomEvent('tool-moved'));
+    });
+    buttonContainer.appendChild(button);
+}
+
+function initStickerButtons() {
+    stickerData.forEach(sticker => {
+        createStickerButton(sticker.symbol);
+    });
+}
+
+const createNewSticker = document.createElement("button");
+createNewSticker.innerHTML = "Add New Sticker";
+createNewSticker.classList.add("emoji-button");
+createNewSticker.addEventListener("click", () => {
+    const symbol = prompt("Enter the symbol for your new sticker:", "");
+    if (symbol) {
+        const newSticker = {
+            symbol: "Custom"
+        };
+        stickerData.push(newSticker);
+        createStickerButton(symbol);
+    }
+    canvas.dispatchEvent(new CustomEvent('tool-moved'));
+});
+buttonContainer.appendChild(createNewSticker);
+
 initStickerButtons();
-setToolButtonSelected(thin);
