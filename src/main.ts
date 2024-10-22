@@ -14,6 +14,28 @@ const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");
 app.append(canvas);
 
+const hueSlider = document.getElementById('hueSlider') as HTMLInputElement;
+let currentHue = 0;
+if (hueSlider) {
+    hueSlider.addEventListener('input', (event) => {
+        currentHue = parseInt((event.target as HTMLInputElement).value, 10);
+    })
+}
+const satSlider = document.getElementById('satSlider') as HTMLInputElement;
+let currentSat = 100;
+if (satSlider) {
+    satSlider.addEventListener('input', (event) => {
+        currentSat = parseInt((event.target as HTMLInputElement).value, 10);
+    })
+}
+const lightSlider = document.getElementById('lightSlider') as HTMLInputElement;
+let currentLight = 50;
+if (lightSlider) {
+    lightSlider.addEventListener('input', (event) => {
+        currentLight = parseInt((event.target as HTMLInputElement).value, 10);
+    })
+}
+
 let isDrawing = false;
 let currentLineWidth = 1;
 let strokes: Stroke[] = [];
@@ -35,6 +57,7 @@ const stickerData = [
 interface Stroke {
     points: {x: number; y: number; }[];
     lineWidth: number;
+    color: string;
     draw(ctx: CanvasRenderingContext2D): void;
     drag(x: number, y: number): void;
 }
@@ -60,14 +83,17 @@ interface Sticker {
     isCursorOverSticker(x: number, y: number): boolean;
 }
 
-function createStroke(initialX: number, initialY: number, lineWidth: number): Stroke {
+function createStroke(initialX: number, initialY: number, lineWidth: number, hue: number, sat: number, light: number): Stroke {
     const points = [{ x: initialX, y: initialY }];
+    const color = `hsl(${hue}, ${sat}%, ${light}%)`;
     return {
         points,
         lineWidth,
+        color,
         draw(ctx: CanvasRenderingContext2D): void {
             ctx.lineWidth = this.lineWidth;
-              if (this.points.length > 0) {
+            ctx.strokeStyle = this.color;
+            if (this.points.length > 0) {
               ctx.beginPath();
               ctx.moveTo(this.points[0].x, this.points[0].y);
               this.points.forEach(points => {
@@ -187,7 +213,7 @@ if (ctx) {
         }
         if (!foundStickerToDrag) {
             isDrawing = true;
-            currentStroke = createStroke(event.offsetX, event.offsetY, currentLineWidth);
+            currentStroke = createStroke(event.offsetX, event.offsetY, currentLineWidth, currentHue, currentSat, currentLight);
             strokes.push(currentStroke);
             redoStack = [];
             dispatchDrawingChangedEvent();
