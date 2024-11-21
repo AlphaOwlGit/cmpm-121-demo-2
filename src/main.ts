@@ -14,27 +14,24 @@ const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");
 app.append(canvas);
 
-const hueSlider = document.getElementById('hueSlider') as HTMLInputElement;
+function initializeSlider(sliderId: string, valueUpdater: (value: number) => void, defaultValue: number) {
+    const slider = document.getElementById(sliderId) as HTMLInputElement;
+    if (slider) {
+        slider.value = defaultValue.toString();
+        slider.addEventListener('input', (event) => {
+            valueUpdater(parseInt((event.target as HTMLInputElement).value, 10));
+        });
+    }
+}
+
 let currentHue = 0;
-if (hueSlider) {
-    hueSlider.addEventListener('input', (event) => {
-        currentHue = parseInt((event.target as HTMLInputElement).value, 10);
-    })
-}
-const satSlider = document.getElementById('satSlider') as HTMLInputElement;
 let currentSat = 100;
-if (satSlider) {
-    satSlider.addEventListener('input', (event) => {
-        currentSat = parseInt((event.target as HTMLInputElement).value, 10);
-    })
-}
-const lightSlider = document.getElementById('lightSlider') as HTMLInputElement;
 let currentLight = 50;
-if (lightSlider) {
-    lightSlider.addEventListener('input', (event) => {
-        currentLight = parseInt((event.target as HTMLInputElement).value, 10);
-    })
-}
+
+initializeSlider('hueSlider', (value) => currentHue = value, 0);
+initializeSlider('satSlider', (value) => currentSat = value, 100);
+initializeSlider('lightSlider', (value) => currentLight = value, 50);
+
 
 let isDrawing = false;
 let currentLineWidth = 1;
@@ -63,6 +60,40 @@ interface DisplayCommand {
 interface ToolPreview {
     draw(ctx: CanvasRenderingContext2D): void;
 }
+
+(() => {
+    const app = document.querySelector('#app');
+  
+    if (app) {
+        const instructions = document.createElement('div');
+        instructions.id = 'instructions';
+        instructions.innerHTML = `
+            <h2>How to Use</h2>
+            <p>1. Click buttons below to select a tool or perform actions.</p>
+            <p>2. Use the canvas to draw or interact with elements.</p>
+            <p>3. Hover over icons for additional tips.</p>
+        `;
+  
+        instructions.style.marginBottom = '1.5rem';
+        instructions.style.padding = '1rem';
+        instructions.style.border = '1px solid #646cff';
+        instructions.style.borderRadius = '8px';
+        instructions.style.backgroundColor = '#1a1a1a';
+        instructions.style.color = '#fff';
+        instructions.style.fontSize = '1.1rem';
+        instructions.style.textAlign = 'left';
+        instructions.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+  
+        const isLightMode = globalThis.matchMedia('(prefers-color-scheme: light)').matches;
+        if (isLightMode) {
+            instructions.style.backgroundColor = '#f9f9f9';
+            instructions.style.color = '#213547';
+        }
+  
+        app.prepend(instructions);
+    }
+})();
+
 
 function createStroke(initialX: number, initialY: number, lineWidth: number, hue: number, sat: number, light: number): DisplayCommand {
     const points = [{ x: initialX, y: initialY }];
@@ -115,6 +146,8 @@ function createToolPreview(x: number, y: number, radius: number): ToolPreview {
         },
     };
 }
+
+
 
 function notify(name: string) {
     canvas.dispatchEvent(new Event(name));
